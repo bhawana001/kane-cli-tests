@@ -1,0 +1,37 @@
+name: Browser Tests
+on: [push, pull_request]
+
+jobs:
+  kane-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Kane CLI
+        run: npm install -g @testmuai/kane-cli
+
+      - name: Run login scenario
+        env:
+          LT_USERNAME: ${{ secrets.LT_USERNAME }}
+          LT_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
+        run: |
+          kane-cli run \
+            --url https://practicetestautomation.com/practice-test-login/ \
+            --username $LT_USERNAME \
+            --access-key $LT_ACCESS_KEY \
+            --headless \
+            --agent \
+            --timeout 240 \
+            --max-steps 20 \
+            "login with 'wronguser' / 'wrongpass', assert 'Your username is invalid', reload the page, login with 'student' / 'Password123', assert 'Logged In Successfully', click Log out, assert 'Practice Test Login'"
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kane-test-logs
+          path: ~/.testmuai/kaneai/sessions/
